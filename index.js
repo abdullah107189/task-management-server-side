@@ -84,10 +84,11 @@ async function run() {
         $set: {
           title: task?.title,
           description: task?.description,
+          createdAt: new Date(),
         },
       };
-      //   const result = await tasksCollection.updateOne(query, updateDoc);
-      //   console.log(result);
+      const result = await tasksCollection.updateOne(query, updateDoc);
+      res.send(result);
     });
 
     await client.db("admin").command({ ping: 1 });
