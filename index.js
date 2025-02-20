@@ -26,7 +26,9 @@ async function run() {
     await client.connect();
     const database = client.db("task_management");
     const usersCollection = database.collection("users");
+    const tasksCollection = database.collection("tasks");
 
+    // set user
     app.post("/setUser", async (req, res) => {
       const userInfo = req.body;
       try {
@@ -45,6 +47,21 @@ async function run() {
         console.error("Error saving user data:", error);
         return res.status(500).send({ error: "Failed to save user data" });
       }
+    });
+
+    // task save
+    app.post("/tasks", async (req, res) => {
+      const tasks = req.body;
+      const result = await tasksCollection.insertOne(tasks);
+      res.send(result);
+    });
+
+    app.get("/tasks", async (req, res) => {
+      const result = await tasksCollection
+        .find()
+        .sort({ createdAt: -1 })
+        .toArray();
+      res.send(result);
     });
     await client.db("admin").command({ ping: 1 });
     console.log(
