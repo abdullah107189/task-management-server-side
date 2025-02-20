@@ -57,8 +57,9 @@ async function run() {
     });
 
     app.get("/tasks", async (req, res) => {
+      const email = req.query;
       const result = await tasksCollection
-        .find()
+        .find(email)
         .sort({ createdAt: -1 })
         .toArray();
       res.send(result);
@@ -84,7 +85,7 @@ async function run() {
         $set: {
           title: task?.title,
           description: task?.description,
-          createdAt: new Date(),
+          createdAt: task?.createdAt,
         },
       };
       const result = await tasksCollection.updateOne(query, updateDoc);
