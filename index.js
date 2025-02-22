@@ -8,26 +8,24 @@ const jwt = require("jsonwebtoken");
 // Middleware
 app.use(cors());
 app.use(express.json());
-const verifyToken = (req, res, next) => {
-  const getToken = req.headers.authorization;
+
+const verifyToken = async (req, res, next) => {
+  const getToken = await req.headers.authorization;
   if (!getToken) {
     return res.status(401).send({ message: "Unauthorized Access" });
   }
+
   const token = getToken.split(" ")[1];
   if (!token) {
     return res.status(401).send({ message: "Unauthorized Access" });
   }
-  const isValid = jwt.verify(
-    token,
-    process.env.ACCESS_TOKEN,
-    (err, decoded) => {
-      if (err) {
-        return res.status(403).send({ message: "Forbidden Access" });
-      }
-      req.user = decoded;
-      next();
+  jwt.verify(token, process.env.ACCESS_TOKEN, (err, decoded) => {
+    if (err) {
+      return res.status(403).send({ message: "Forbidden Access" });
     }
-  );
+    req.user = decoded;
+    next();
+  });
 };
 
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
@@ -52,18 +50,14 @@ async function run() {
 
     app.post("/jwt-sing", async (req, res) => {
       const user = req.body;
-      const token = jwt.sign(
-        {
-          data: "foobar",
-        },
-        process.env.ACCESS_TOKEN,
-        { expiresIn: "1h" }
-      );
+      const token = jwt.sign(user, process.env.ACCESS_TOKEN, {
+        expiresIn: "1h",
+      });
       res.send({ token });
     });
 
     // set user
-    app.post("/setUser", verifyToken, async (req, res) => {
+    app.post("/setUser", async (req, res) => {
       const userInfo = req.body;
       try {
         // Check if user already exists
