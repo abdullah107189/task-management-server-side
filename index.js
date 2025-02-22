@@ -3,10 +3,23 @@ const express = require("express");
 const app = express();
 const port = process.env.PORT || 4545;
 const cors = require("cors");
+const jwt = require("jsonwebtoken");
 
 // Middleware
 app.use(cors());
 app.use(express.json());
+const verifyToken = (req, res, next) => {
+  const token = req.config.headers;
+  console.log(token);
+  const isValid = jwt.verify(
+    token,
+    process.env.ACCESS_TOKEN,
+    (err, decoded) => {
+      console.log(decoded.foo); // bar
+    }
+  );
+  next();
+};
 
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.fx40ttv.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
@@ -23,11 +36,22 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
     const database = client.db("task_management");
     const usersCollection = database.collection("users");
     const tasksCollection = database.collection("tasks");
 
+    app.post("/jwt-sing", async (req, res) => {
+      const user = req.body;
+      const token = jwt.sign(
+        {
+          data: "foobar",
+        },
+        process.env.ACCESS_TOKEN,
+        { expiresIn: "1h" }
+      );
+      res.send({ token });
+    });
     // set user
     app.post("/setUser", async (req, res) => {
       const userInfo = req.body;
@@ -56,7 +80,7 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/tasks", async (req, res) => {
+    app.get("/tasks", verifyToken, async (req, res) => {
       const email = req.query;
       const result = await tasksCollection
         .find(email)
@@ -105,7 +129,7 @@ async function run() {
       res.send(result);
     });
 
-    await client.db("admin").command({ ping: 1 });
+    // await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
     );
