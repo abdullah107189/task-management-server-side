@@ -9,16 +9,25 @@ const jwt = require("jsonwebtoken");
 app.use(cors());
 app.use(express.json());
 const verifyToken = (req, res, next) => {
-  const token = req.config.headers;
-  console.log(token);
+  const getToken = req.headers.authorization;
+  if (!getToken) {
+    return res.state(401).message("Unauthorized Access");
+  }
+  const token = getToken.split(" ")[1];
+  if (!token) {
+    return res.state(401).message("Unauthorized Access");
+  }
   const isValid = jwt.verify(
     token,
     process.env.ACCESS_TOKEN,
     (err, decoded) => {
-      console.log(decoded.foo); // bar
+      if (err) {
+        return res.state(403).message("Forbidden Access");
+      }
+      req.user = decoded;
+      next();
     }
   );
-  next();
 };
 
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
