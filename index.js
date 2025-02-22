@@ -11,18 +11,18 @@ app.use(express.json());
 const verifyToken = (req, res, next) => {
   const getToken = req.headers.authorization;
   if (!getToken) {
-    return res.state(401).message("Unauthorized Access");
+    return res.status(401).send({ message: "Unauthorized Access" });
   }
   const token = getToken.split(" ")[1];
   if (!token) {
-    return res.state(401).message("Unauthorized Access");
+    return res.status(401).send({ message: "Unauthorized Access" });
   }
   const isValid = jwt.verify(
     token,
     process.env.ACCESS_TOKEN,
     (err, decoded) => {
       if (err) {
-        return res.state(403).message("Forbidden Access");
+        return res.status(403).send({ message: "Forbidden Access" });
       }
       req.user = decoded;
       next();
@@ -61,8 +61,9 @@ async function run() {
       );
       res.send({ token });
     });
+
     // set user
-    app.post("/setUser", async (req, res) => {
+    app.post("/setUser", verifyToken, async (req, res) => {
       const userInfo = req.body;
       try {
         // Check if user already exists
@@ -83,7 +84,7 @@ async function run() {
     });
 
     // task save
-    app.post("/tasks", async (req, res) => {
+    app.post("/tasks", verifyToken, async (req, res) => {
       const tasks = req.body;
       const result = await tasksCollection.insertOne(tasks);
       res.send(result);
@@ -97,20 +98,20 @@ async function run() {
         .toArray();
       res.send(result);
     });
-    app.get("/tasks/:id", async (req, res) => {
+    app.get("/tasks/:id", verifyToken, async (req, res) => {
       const id = req.params;
       const query = { _id: new ObjectId(id) };
       const result = await tasksCollection.findOne(query);
       res.send(result);
     });
-    app.delete("/tasks/:id", async (req, res) => {
+    app.delete("/tasks/:id", verifyToken, async (req, res) => {
       const id = req.params;
       const query = { _id: new ObjectId(id) };
       const result = await tasksCollection.deleteOne(query);
       res.send(result);
     });
 
-    app.put("/tasks/:id", async (req, res) => {
+    app.put("/tasks/:id", verifyToken, async (req, res) => {
       const id = req.params;
       const task = req.body;
       const query = { _id: new ObjectId(id) };
@@ -125,7 +126,7 @@ async function run() {
       res.send(result);
     });
 
-    app.put("/updateCategory/:id", async (req, res) => {
+    app.put("/updateCategory/:id", verifyToken, async (req, res) => {
       const id = req.params;
       const category = req.body;
       const query = { _id: new ObjectId(id) };
